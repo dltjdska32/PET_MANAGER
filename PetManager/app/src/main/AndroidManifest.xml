@@ -13,24 +13,24 @@
         android:theme="@style/Theme.Test1"
         tools:targetApi="31">
         <activity
-            android:name=".ChatActivity"
+            android:name="com.petmanager.presentation.ui.chat.ChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize|adjustPan"/>
         <activity
-            android:name=".PostActivity"
+            android:name="com.petmanager.presentation.ui.home.PostActivity"
             android:exported="false" />
         <activity
-            android:name=".BasicInfoActivity"
+            android:name="com.petmanager.presentation.ui.auth.BasicInfoActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.petmanager.presentation.ui.main.MainActivity"
             android:exported="false" />
         <activity
-            android:name=".SignInActivity"
+            android:name="com.petmanager.presentation.ui.auth.SignInActivity"
             android:exported="false"></activity> <!-- 액션바 제거 android:theme="@style/Theme.AppCompat.Light.NoActionBar" -->
         <!-- "android.intent.action.MAIN", "android.intent.category.LAUNCHER" 를 통해서 앱실행시 초기 화면 splash화면으로 설정 -->
         <activity
-            android:name=".SplashActivity"
+            android:name="com.petmanager.presentation.ui.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 

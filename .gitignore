@@ -31,3 +31,147 @@ google-services.json
 PetManager/app/test1-f8993-268970e3fe3a.json
 # Android Profiling
 *.hprof
+
+#설정파일
+*.env
+*.yml
+*.properties
+
+
+#로그파일
+logs/
+*.log/
+*.log.gz
+*.log.bz2
+*.log.xz
+*.log.lzma
+*.log.zstd
+*.log.lz4
+*.log.snappy
+*.log.gzip
+*.log.bzip2
+*.log.xz
+*.log.lzma
+*.log.zstd
+
+
+# Build files
+/build/
+/app/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Gradle files
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Local configuration files
+local.properties
+*.properties
+!gradle-wrapper.properties
+
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.cxx/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Keystore files
+*.jks
+*.keystore
+*.keystore.properties
+
+# Log files
+*.log
+logs/
+*.log.*
+
+# Environment files
+*.env
+*.env.local
+*.env.production
+*.env.development
+
+# YAML config files (민감한 정보)
+*.yml
+*.yaml
+!gradle.yml
+
+# ProGuard
+proguard/
+mapping.txt
+seeds.txt
+unused.txt
+
+# Android Profiling
+*.hprof
+
+# NDK
+obj/
+.externalNativeBuild
+
+# Generated files
+gen/
+out/
+bin/
+
+# Android Studio Navigation editor temp files
+.navigation/
+
+# Android Studio captures folder
+captures/
+
+# Google Services (민감한 정보)
+google-services.json
+google-services.json.bak
+
+# Firebase
+firebase_options.json
+firebase_app_id_file.json
+
+# Signing files
+signing.properties
+keystore.properties
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Bundle artifacts
+*.jsbundle
+
+# CocoaPods
+Pods/
+
+# Android Bundle
+*.aab
+
+# APK
+*.apk
+*.ap_
+*.dex
+
+# Misc
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+Thumbs.db
