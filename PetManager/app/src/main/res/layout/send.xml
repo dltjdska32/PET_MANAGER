@@ -1,17 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/chat_message_horizontal_padding"
+    android:paddingVertical="@dimen/chat_message_vertical_padding">
 
     <TextView
-        android:id="@+id/send_message_text"
+        android:id="@+id/send_time_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="5dp"
-        android:padding="10dp"
-        android:text="보낸 메시지"
-        android:background="@drawable/chatbackground"
-        android:textColor="@color/black"
-        android:textSize="18sp" />
-</RelativeLayout>
+        android:layout_marginEnd="6dp"
+        android:gravity="bottom"
+        android:includeFontPadding="false"
+        android:textColor="@color/text_hint"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="@id/message_content_row"
+        app:layout_constraintEnd_toStartOf="@id/message_content_row"
+        tools:text="오후 3:24" />
+
+    <LinearLayout
+        android:id="@+id/message_content_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/message_image"
+            android:layout_width="@dimen/chat_image_size"
+            android:layout_height="@dimen/chat_image_size"
+            android:adjustViewBounds="true"
+            android:contentDescription="보낸 이미지"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/send_message_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_chat_bubble_mine"
+            android:includeFontPadding="false"
+            android:lineSpacingMultiplier="1.4"
+            android:maxWidth="@dimen/chat_bubble_max_width"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            tools:text="보낸 메시지" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

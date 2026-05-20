@@ -5,51 +5,155 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ChatActivity"
-    android:fitsSystemWindows="true">
+    android:background="@color/surface"
+    android:fitsSystemWindows="true"
+    tools:context=".ChatActivity">
 
+    <LinearLayout
+        android:id="@+id/chat_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:background="@color/card_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="12dp">
 
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="뒤로"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/chat_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="게시글 제목" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_leave"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="8dp"
+            android:text="나가기"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:icon="@drawable/ic_exit"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/header_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/chat_header"
+        android:background="@color/divider" />
+
+    <ProgressBar
+        android:id="@+id/loading_older_progress"
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/header_divider"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:layout_marginTop="30dp"
         android:id="@+id/chat_recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_alignParentTop="true"
-        android:layout_above="@id/input_layout"/>
+        android:layout_above="@id/input_layout"
+        android:layout_below="@id/header_divider"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <View
+        android:id="@+id/input_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_above="@id/input_layout"
+        android:background="@color/divider" />
 
     <LinearLayout
         android:id="@+id/input_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/card_background"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginBottom="10dp"
-        android:layout_alignParentBottom="true">
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp">
+
+        <ImageButton
+            android:id="@+id/btn_attach"
+            android:layout_width="@dimen/chat_send_btn_size"
+            android:layout_height="@dimen/chat_send_btn_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="파일 첨부"
+            android:src="@drawable/ic_attach"
+            app:tint="@color/text_secondary" />
 
         <EditText
             android:id="@+id/message_edit"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_chat_input"
             android:hint="메시지를 입력하세요"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:background="@android:drawable/edit_text"
-            android:inputType="textMultiLine"
-            android:lines="1"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences|textMultiLine"
             android:maxLines="5"
-            android:scrollbars="vertical"/>
+            android:minHeight="@dimen/chat_input_min_height"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:scrollbars="vertical"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:textSize="15sp" />
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/send_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="50dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:text="전송"
-            android:textColor="@android:color/white"/>
+            style="@style/Widget.PetManager.ChatSendButton"
+            android:layout_width="@dimen/chat_send_btn_size"
+            android:layout_height="@dimen/chat_send_btn_size"
+            android:layout_marginStart="8dp"
+            android:enabled="false"
+            android:text=""
+            app:backgroundTint="@color/primary"
+            app:rippleColor="@color/bottom_nav_ripple_pressed" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/upload_progress"
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/input_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
 
 </RelativeLayout>

@@ -1,75 +1,72 @@
 package com.petmanager.presentation.adapter
 
-import android.content.ContentValues
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
-import com.google.firebase.ktx.Firebase
+import coil.load
+import coil.transform.RoundedCornersTransformation
 import com.petmanager.domain.model.Profiles
 import com.petmanager.presentation.ui.home.PostActivity
-import com.example.test1.R
+import com.petmanager.R
 
 class HomeAdapter(val profileList: ArrayList<Profiles>) : RecyclerView.Adapter<HomeAdapter.CustomViewHolder>() {
-
-
-    private lateinit var auth: FirebaseAuth
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.home_list_item, parent, false)
         return CustomViewHolder(view).apply {
             itemView.setOnClickListener {
                 val curPos: Int = adapterPosition
-                val profile: Profiles = profileList.get(curPos)
-                val postId: String = profile.postID
-                val intent = Intent(parent.context, PostActivity::class.java).apply {
-                    putExtra("postId", postId)
+                if (curPos != RecyclerView.NO_POSITION) {
+                    val profile: Profiles = profileList[curPos]
+                    val postId: String = profile.postID
+                    val intent = Intent(parent.context, PostActivity::class.java).apply {
+                        putExtra("postId", postId)
+                    }
+                    parent.context.startActivity(intent)
                 }
-
-                parent.context.startActivity(intent)
-
             }
         }
     }
 
-    override fun getItemCount(): Int {
-        return profileList.size
-    }
+    override fun getItemCount(): Int = profileList.size
 
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
         val profile = profileList[position]
 
-        holder.names.text = profile.names
-        holder.dong.text = profile.dong
-        holder.ment.text = profile.ment
-        holder.work.setImageResource(profile.work)
-        holder.deadline.text = "마감일: ${profile.deadline}"
+        holder.title.text = profile.ment
+        holder.region.text = profile.dong
+        holder.author.text = profile.names
+        holder.likes.text = profile.deadline
 
-        val postID = profile.postID
+        holder.thumbLiked.setImageResource(
+            if (profile.isFavorite) R.drawable.ic_heart_liked_overlay
+            else R.drawable.ic_heart_thumb_outline_white,
+        )
 
-        val db = Firebase.firestore
-        auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
-        var userID =""
+        if (!profile.thumbnailUrl.isNullOrBlank()) {
+            holder.thumbnail.load(profile.thumbnailUrl) {
+                crossfade(true)
+                placeholder(R.drawable.ic_paw)
+                error(R.drawable.ic_paw)
+                transformations(RoundedCornersTransformation(12f))
+            }
+            holder.thumbnail.scaleType = ImageView.ScaleType.CENTER_CROP
+        } else {
+            holder.thumbnail.setImageResource(profile.work)
+            holder.thumbnail.scaleType = ImageView.ScaleType.CENTER
+        }
     }
 
-    // 안드로이드 스튜디오에서 기본적으로 제공하는 리사이클러뷰를 상속받음
     class CustomViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-
-        //val post: TextView = itemView.findViewById(R.id.post_id)
-        val work: ImageView = itemView.findViewById(R.id.iv_profile) // 호텔 or 산책
-        val names: TextView = itemView.findViewById(R.id.tv_names) // 이름
-        val dong: TextView = itemView.findViewById(R.id.tv_dong) // 동
-        val ment: TextView = itemView.findViewById(R.id.tv_ment) // 내용
-        val deadline: TextView = itemView.findViewById(R.id.tv_deadline)
+        val thumbnail: ImageView = itemView.findViewById(R.id.iv_profile)
+        val thumbLiked: ImageView = itemView.findViewById(R.id.iv_thumb_liked)
+        val title: TextView = itemView.findViewById(R.id.tv_ment)
+        val region: TextView = itemView.findViewById(R.id.tv_dong)
+        val author: TextView = itemView.findViewById(R.id.tv_names)
+        val likes: TextView = itemView.findViewById(R.id.tv_deadline)
     }
 }
-

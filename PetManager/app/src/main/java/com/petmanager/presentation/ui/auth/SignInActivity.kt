@@ -1,144 +1,128 @@
 package com.petmanager.presentation.ui.auth
 
-import android.content.ContentValues
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.Toast
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import android.view.View
+import android.widget.FrameLayout
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.petmanager.R
+import com.petmanager.data.remote.api.AuthEventBus
 import com.petmanager.presentation.ui.main.MainActivity
-import com.example.test1.R
+import com.petmanager.presentation.viewmodel.AuthViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class SignInActivity : AppCompatActivity() {
 
-
-    companion object {
-        private const val RC_SIGN_IN = 9001
-    }
-
-    private lateinit var auth: FirebaseAuth
-
-
+    private val authViewModel: AuthViewModel by viewModels()
+    /** Success / NeedRegion 중복 처리·LiveData 재전달로 인한 이중 전환 방지 */
+    private var authNavigationConsumed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_in)
+        
+        authNavigationConsumed = savedInstanceState?.getBoolean(STATE_AUTH_NAV_DONE) == true
+        // 로그인 상태 초기화
+        authViewModel.resetState()
 
-        auth = FirebaseAuth.getInstance()
-        val db = Firebase.firestore
+        // 카카오 로그인 버튼 — SDK 전환 전부터 전체 덮개로 로그인 폼이 보이지 않게 함
+        findViewById<View>(R.id.signInButton).setOnClickListener {
+            setAuthBlockingOverlay(true)
+            authViewModel.loginWithKakao(this)
+        }
 
-        val currentUser = auth.currentUser
+        // 일반 로그인 버튼 (기존 기능 유지)
+        findViewById<android.widget.Button>(R.id.loginButton).setOnClickListener {
+            val username = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.usernameInput).text.toString()
+            val password = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.passwordInput).text.toString()
+            if (username.isNotEmpty() && password.isNotEmpty()) {
+                authViewModel.login(username, password)
+            } else {
+                android.widget.Toast.makeText(this, "아이디와 비밀번호를 입력해주세요", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
 
-        if (currentUser != null) {
-            // The user is already signed in, navigate to MainActivity
+        // 회원가입 링크
+        findViewById<android.widget.TextView>(R.id.signUpLink).setOnClickListener {
+            val intent = Intent(this, SignUpActivity::class.java)
+            startActivity(intent)
+        }
 
-            db.collection("user")
-                .whereEqualTo("userID", currentUser?.uid) //키값넣는거. where절
-                .get()
-                .addOnSuccessListener { documents ->
-                    if(!documents.isEmpty){
-                        intent = Intent(this, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
+        setupObservers()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_AUTH_NAV_DONE, authNavigationConsumed)
+    }
+
+    private fun setupObservers() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                authViewModel.loginState.collect { state ->
+                    when (state) {
+                        is AuthViewModel.LoginState.Loading -> {
+                            authNavigationConsumed = false
+                            setAuthBlockingOverlay(true)
+                        }
+                        is AuthViewModel.LoginState.Success -> {
+                            if (authNavigationConsumed) return@collect
+                            authNavigationConsumed = true
+                            setAuthBlockingOverlay(false)
+                            navigateToMain()
+                        }
+                        is AuthViewModel.LoginState.NeedRegionSetting -> {
+                            if (authNavigationConsumed) return@collect
+                            authNavigationConsumed = true
+                            val intent = Intent(this@SignInActivity, RegionSelectionActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            }
+                            val opts = ActivityOptionsCompat.makeCustomAnimation(this@SignInActivity, 0, 0)
+                            startActivity(intent, opts.toBundle())
+                            finish()
+                            overridePendingTransition(0, 0)
+                        }
+                        is AuthViewModel.LoginState.Error -> {
+                            setAuthBlockingOverlay(false)
+                            android.widget.Toast.makeText(this@SignInActivity, state.message, android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            setAuthBlockingOverlay(false)
+                        }
                     }
-                    else{
-                        val intent = Intent(this, BasicInfoActivity::class.java)
-                        startActivity(intent)
-                        finish() // finish the current activity to prevent the user from coming back to the SignInActivity using the back button
-
-                    }
-                    for (document in documents) {
-                        Log.d(ContentValues.TAG, "${document.id} => ${document.data}")
-                    }
-
-                }
-                .addOnFailureListener { exception ->
-                    Log.w(ContentValues.TAG, "Error getting documents: ", exception)
                 }
             }
-
-
-
-
-        val signInButton = findViewById<Button>(R.id.signInButton)
-        signInButton.setOnClickListener {
-            signIn()
         }
     }
 
-    private fun signIn() {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-
-        val googleSignInClient = GoogleSignIn.getClient(this, gso)
-        val signInIntent = googleSignInClient.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN)
+    private fun setAuthBlockingOverlay(visible: Boolean) {
+        findViewById<FrameLayout>(R.id.authBlockingOverlay).visibility =
+            if (visible) View.VISIBLE else View.GONE
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    companion object {
+        private const val STATE_AUTH_NAV_DONE = "sign_in_auth_nav_done"
+    }
 
-        if (requestCode == RC_SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                firebaseAuthWithGoogle(account.idToken!!)
-            } catch (e: ApiException) {
-                Toast.makeText(this, "Google sign in failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+    private fun navigateToMain() {
+        // 새 로그인 성공 시, 이후 세션 만료 이벤트가 다시 동작하도록 플래그 리셋
+        AuthEventBus.resetSessionExpiredFlag()
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-    }
-
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    Toast.makeText(this, "Signed in as ${user?.displayName}", Toast.LENGTH_SHORT).show()
-
-                    val db = Firebase.firestore
-
-                    val currentUser = auth.currentUser
-                    db.collection("user")
-                        .whereEqualTo("userID", currentUser?.uid) //키값넣는거. where절
-                        .get()
-                        .addOnSuccessListener { documents ->
-                            if(!documents.isEmpty){
-                                intent = Intent(this, MainActivity::class.java)
-                                startActivity(intent)
-                                finish()
-                            } //if문은 임의로 넣은거
-                            else{
-                                val intent = Intent(this, BasicInfoActivity::class.java)
-                                startActivity(intent)
-                                finish() // finish the current activity to prevent the user from coming back to the SignInActivity using the back button
-
-                            }
-                            for (document in documents) {
-                                Log.d(ContentValues.TAG, "${document.id} => ${document.data}")
-                            }
-
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.w(ContentValues.TAG, "Error getting documents: ", exception)
-                        }
-                } else {
-                    Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
-                }
-            }
+        startActivity(
+            intent,
+            ActivityOptionsCompat.makeCustomAnimation(this, 0, 0).toBundle()
+        )
+        finish()
+        overridePendingTransition(0, 0)
     }
 }
-

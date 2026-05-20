@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# API Keys / secrets (카카오 키, 서버 URL 등)
+keystore.properties
+secrets.properties
+google-services.json
+*.jks
+*.keystore

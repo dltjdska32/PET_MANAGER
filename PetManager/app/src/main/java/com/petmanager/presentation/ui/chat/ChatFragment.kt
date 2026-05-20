@@ -1,92 +1,103 @@
 package com.petmanager.presentation.ui.chat
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.test1.databinding.ChatFragBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
-import com.google.firebase.ktx.Firebase
+import com.petmanager.databinding.ChatFragBinding
 import com.petmanager.domain.model.ChatInfo
 import com.petmanager.presentation.adapter.ChatAdapter
+import com.petmanager.presentation.ui.main.MainActivity
+import com.petmanager.presentation.viewmodel.ChatListViewModel
+import com.petmanager.R
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class ChatFragment : Fragment() {
 
-    private lateinit var binding: ChatFragBinding
+    private var _binding: ChatFragBinding? = null
+    private val binding get() = _binding!!
+
+    private val viewModel: ChatListViewModel by viewModels()
     private lateinit var chatAdapter: ChatAdapter
     private val chatList = arrayListOf<ChatInfo>()
 
     companion object {
-        const val TAG: String = "로그"
-
-        fun newInstance(): ChatFragment {
-            return ChatFragment()
-        }
+        fun newInstance(): ChatFragment = ChatFragment()
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        binding = ChatFragBinding.inflate(inflater, container, false)
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = ChatFragBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        val db = Firebase.firestore
-        val auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         chatAdapter = ChatAdapter(chatList)
-
-        // RecyclerView 설정
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext())
         binding.rvChat.setHasFixedSize(true)
         binding.rvChat.adapter = chatAdapter
 
-        // 첫 번째 쿼리 실행
-        db.collection("chatList")
-            .whereEqualTo("userID", currentUser?.uid)
-            .get()
-            .addOnSuccessListener { documents ->
-                chatList.clear()
-                for (document in documents) {
-                    val chat = document.toObject<ChatInfo>()
-                    chatList.add(chat)
-                }
-                chatAdapter.notifyDataSetChanged()
+        binding.emptyCtaBtn.setOnClickListener {
+            (activity as? MainActivity)?.let { main ->
+                main.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavi)
+                    ?.selectedItemId = R.id.bottom_nav_home
             }
-            .addOnFailureListener { exception ->
-                Log.w(TAG, "Error getting documents: ", exception)
-            }
+        }
 
-        // 두 번째 쿼리 실행
-        db.collection("chatList")
-            .whereEqualTo("hostID", currentUser?.uid)
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    val chat = document.toObject<ChatInfo>()
-                    // 순서를 바꿔서 추가
-                    chatList.add(ChatInfo(
-                        chat.hostID,
-                        chat.hostName,
-                        chat.userID,
-                        chat.userName,
-                        chat.postID,
-                        chat.title
-                    ))
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    when (state) {
+                        is ChatListViewModel.ChatListUiState.Loading -> {
+                            // 목록 로딩 중 — 기존 empty 유지
+                        }
+                        is ChatListViewModel.ChatListUiState.Success -> {
+                            chatList.clear()
+                            chatList.addAll(state.rooms)
+                            chatAdapter.notifyDataSetChanged()
+                            updateEmptyState(chatList)
+                        }
+                        is ChatListViewModel.ChatListUiState.Error -> {
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                            updateEmptyState(chatList)
+                        }
+                    }
                 }
-                chatAdapter.notifyDataSetChanged()
             }
-            .addOnFailureListener { exception ->
-                Log.w(TAG, "Error getting documents: ", exception)
-            }
+        }
+    }
 
-        return binding.root
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadRooms()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun updateEmptyState(list: List<ChatInfo>) {
+        if (list.isEmpty()) {
+            binding.rvChat.visibility = View.GONE
+            binding.emptyState.visibility = View.VISIBLE
+        } else {
+            binding.rvChat.visibility = View.VISIBLE
+            binding.emptyState.visibility = View.GONE
+        }
     }
 }
-

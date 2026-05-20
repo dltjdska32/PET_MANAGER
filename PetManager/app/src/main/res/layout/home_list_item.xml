@@ -1,91 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@id/post_id"
     android:layout_width="match_parent"
-    android:layout_height="120dp"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider"
+    app:cardBackgroundColor="@color/card_background">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp">
 
-        <!-- 여기에 게시물 내용을 넣으세요 -->
+        <!-- 썸네일 우하단: 항상 흰 테두리 하트, isLiked 일 때만 분홍 채움 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_variant">
 
-        <ImageView
-            android:id="@+id/iv_profile"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginTop="-25dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5"
-            app:srcCompat="@drawable/hotel" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tv_names"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="홍대연"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@+id/iv_profile"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/tv_dong" />
+                <ImageView
+                    android:id="@+id/iv_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    app:srcCompat="@drawable/ic_paw"
+                    android:contentDescription="게시글 썸네일" />
 
-        <TextView
-            android:id="@+id/tv_dong"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="(두정동)"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="@+id/tv_names"
-            app:layout_constraintTop_toBottomOf="@+id/tv_names" />
+                <ImageView
+                    android:id="@+id/iv_thumb_liked"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="5dp"
+                    android:importantForAccessibility="no"
+                    app:srcCompat="@drawable/ic_heart_thumb_outline_white" />
+            </FrameLayout>
 
-        <TextView
-            android:id="@+id/tv_ment"
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 텍스트 영역 (오른쪽) -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="5/26~5/27 맡겨주실 분 구합니다."
-            android:textColor="#000000"
-            android:textSize="14sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/iv_profile"
-            app:layout_constraintTop_toBottomOf="@+id/tv_dong" />
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="14dp"
+            android:layout_gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tv_deadline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="마감일: "
-            android:textColor="#3F51B5"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_ment" />
+            <!-- 제목 -->
+            <TextView
+                android:id="@+id/tv_ment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="제목"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:lineSpacingExtra="2dp" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:background="#D3D3D3"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_deadline" />
+            <!-- 지역 -->
+            <TextView
+                android:id="@+id/tv_dong"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="지역"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp" />
 
-        <TextView
-            android:id="@+id/post_id"
-            android:layout_width="350dp"
-            android:layout_height="match_parent" />
+            <!-- 작성자 -->
+            <TextView
+                android:id="@+id/tv_names"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="작성자"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- 좋아요 수 (작은 하트 + 문구) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical">
 
-</androidx.cardview.widget.CardView>
+                <ImageView
+                    android:id="@+id/iv_row_heart"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:importantForAccessibility="no"
+                    app:srcCompat="@drawable/ic_heart_filled_grey" />
+
+                <TextView
+                    android:id="@+id/tv_deadline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="좋아요 0"
+                    android:textColor="@color/text_hint"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

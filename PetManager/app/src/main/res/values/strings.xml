@@ -1,5 +1,23 @@
 <resources>
-    <string name="app_name">test1</string>
-    <string name="default_web_client_id">1234567890-abcdefghijklmnopqrstuv.apps.googleusercontent.com</string>
+    <string name="app_name">우쭈쭈</string>
+    
+    <!-- 카카오 네이티브 앱 키 - keystore.properties에서 자동으로 로드됩니다 -->
+    <string name="kakao_native_app_key">${KAKAO_NATIVE_APP_KEY}</string>
+
+    <string name="write_date_hint">날짜를 선택해주세요</string>
+    <string name="write_date_start_hint">시작일 선택</string>
+    <string name="write_date_end_hint">종료일 선택</string>
+    <string name="write_date_start_after_end">시작일은 종료일보다 늦을 수 없습니다.</string>
+    <string name="write_date_end_before_start">종료일은 시작일보다 앞설 수 없습니다.</string>
+
+    <string name="write_photo_main_title">대표 사진</string>
+    <string name="write_photo_main_sub">최대 1장 · 생략 가능</string>
+    <string name="write_photo_main_attach">사진 첨부</string>
+    <string name="write_photo_extra_title">추가 사진</string>
+    <string name="write_photo_extra_sub">대표 사진을 보완하는 이미지 · 최대 5장 · 생략 가능</string>
+    <string name="write_photo_extra_attach">사진 추가</string>
+    <string name="write_photo_remove_main">대표 사진 지우기</string>
+    <string name="write_photo_extra_limit">추가 사진은 최대 5장까지 넣을 수 있어요.</string>
+    <string name="write_photo_extra_truncated">선택한 사진 중 5장만 반영했어요.</string>
 
 </resources>

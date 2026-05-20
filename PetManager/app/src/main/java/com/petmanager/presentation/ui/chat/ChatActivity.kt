@@ -1,216 +1,259 @@
 package com.petmanager.presentation.ui.chat
 
-import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import android.view.WindowManager
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
+import androidx.core.widget.doAfterTextChanged
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.test1.databinding.ActivityChatBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
-import com.google.firebase.ktx.Firebase
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import androidx.recyclerview.widget.RecyclerView
+import com.petmanager.databinding.ActivityChatBinding
 import com.petmanager.domain.model.Message
 import com.petmanager.presentation.adapter.MessageAdapter
-import com.petmanager.data.remote.api.RetrofitInstance
-import com.petmanager.data.remote.api.FCMNotification
-import com.petmanager.data.remote.api.NotificationData
-import com.petmanager.data.remote.api.FCMResponse
-import com.petmanager.domain.model.Info
-import com.example.test1.R
+import com.petmanager.presentation.viewmodel.ChatRoomViewModel
+import com.petmanager.R
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
 
-    private lateinit var receiverTitle: String
-    private lateinit var receiverPostId: String
-    private lateinit var receiverHostId: String
+    private lateinit var binding: ActivityChatBinding
+    private val viewModel: ChatRoomViewModel by viewModels()
+    private val messageList = arrayListOf<Message>()
+    private lateinit var messageAdapter: MessageAdapter
+    private lateinit var layoutManager: LinearLayoutManager
 
+    private var isLoadingOlderScroll = false
 
-    //바인딩 객체
-    private lateinit var binding : ActivityChatBinding
+    private val pickFiles = registerForActivityResult(
+        ActivityResultContracts.GetMultipleContents(),
+    ) { uris ->
+        if (uris.isEmpty()) return@registerForActivityResult
+        if (uris.size > MAX_ATTACH_FILES) {
+            Toast.makeText(this, "파일은 최대 ${MAX_ATTACH_FILES}개까지 선택할 수 있습니다.", Toast.LENGTH_SHORT).show()
+            viewModel.uploadFiles(uris.take(MAX_ATTACH_FILES))
+        } else {
+            viewModel.uploadFiles(uris)
+        }
+    }
 
-    lateinit var mAuth : FirebaseAuth
-    lateinit var mDbRef : DatabaseReference
-    private lateinit var receiverRoom : String
-    private lateinit var senderRoom : String
-    private lateinit var auth: FirebaseAuth
-
-
-
-    private lateinit var messageList: ArrayList<Message>
-
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        //enableEdgeToEdge()
-        //setContentView(R.layout.activity_chat)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        val feedId = intent.getStringExtra(EXTRA_FEED_ID).orEmpty()
+        val roomId = intent.getStringExtra(EXTRA_ROOM_ID)
+        val chatRoomName = intent.getStringExtra(EXTRA_CHAT_ROOM_NAME)
+        val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+
+        if (feedId.isBlank()) {
+            Toast.makeText(this, "잘못된 채팅 요청입니다.", Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
-        val db = Firebase.firestore
-        auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
 
-        messageList = ArrayList()
-        val messageAdapter: MessageAdapter = MessageAdapter(this,messageList)
-
-        binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
+        messageAdapter = MessageAdapter(
+            messageList = messageList,
+            currentUserId = viewModel.currentUserId.orEmpty(),
+        )
+        layoutManager = LinearLayoutManager(this).apply {
+            stackFromEnd = true
+        }
+        binding.chatRecyclerView.layoutManager = layoutManager
         binding.chatRecyclerView.adapter = messageAdapter
+        setupScrollListener()
 
-        receiverTitle = intent.getStringExtra("title").toString()
-        receiverPostId = intent.getStringExtra("postId").toString()
-        receiverHostId = intent.getStringExtra("hostId").toString()
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnLeave.setOnClickListener { confirmLeaveRoom() }
+        binding.btnAttach.setOnClickListener { pickFiles.launch("*/*") }
 
+        setupSendButton()
+        viewModel.currentUserId?.let { messageAdapter.updateCurrentUserId(it) }
 
-        mAuth = FirebaseAuth.getInstance()
-        mDbRef = FirebaseDatabase.getInstance().reference
-
-        val senderUid = mAuth.currentUser?.uid
-
-        receiverRoom = receiverPostId + senderUid + receiverHostId
-        senderRoom = receiverPostId + receiverHostId + senderUid
-
-
-        supportActionBar?.title = receiverTitle
-
-
-        //메시지 전송
-        binding.sendBtn.setOnClickListener{
-            val message = binding.messageEdit.text.toString()
-            val messageObject = Message(message,senderUid)
-
-
-            /*
-            mDbRef.child("chats").child(receiverHostId).child("messages").push()
-                .setValue(messageObject).addOnSuccessListener {
-                    //저장 성공하면 상대방 채팅 db도 생성
-                    mDbRef.child("chats").child(senderUid.toString()).child("messages").push()
-                        .setValue(messageObject)
-                }
-
-             */
-            //데이터 저장
-            mDbRef.child("chats").child(senderRoom).child("messages").push()
-                .setValue(messageObject).addOnSuccessListener {
-                    //저장 성공하면 상대방 채팅 db도 생성
-                    mDbRef.child("chats").child(receiverRoom).child("messages").push()
-                        .setValue(messageObject)
-                }
-
-            db.collection("user")
-                .whereEqualTo("userID", currentUser?.uid)
-                .get()
-                .addOnSuccessListener { documents ->
-                    for(document in documents){
-                        val user = document.toObject<Info>()
-                        val receiverToken = user.fcmToken.toString()
-                        val title = "새 메시지 도착"
-
-                        // FCM 알림 전송
-                        sendNotification(receiverToken, title, binding.messageEdit.text.toString())
-
-                    }
-
-                }
-
-
-
-            //입력 적용
-            binding.messageEdit.setText("")
-            binding.chatRecyclerView.post {
-                binding.chatRecyclerView.scrollToPosition(messageAdapter.itemCount - 1)
-            }
-
-
-
-
-            /*
-            mDbRef.child("chats").child(senderUid.toString()).child(receiverPostId).child(receiverHostId).child("messages").push()
-                .setValue(messageObject).addOnSuccessListener {
-                    //저장 성공하면 상대방 채팅 db도 생성
-                    mDbRef.child("chats").child(receiverHostId).child(receiverPostId).child(senderUid.toString()).child("messages").push()
-                        .setValue(messageObject)
-                }
-
-            //입력 적용
-            binding.messageEdit.setText("")
-
-             */
-
-
-
-        }
-
-        //메시지 가져오기
-        mDbRef.child("chats").child(senderRoom).child("messages")
-            .addValueEventListener(object:ValueEventListener{
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    messageList.clear()
-
-                    for(postSnapshot in snapshot.children){
-
-                        val message = postSnapshot.getValue(Message::class.java)
-                        messageList.add(message!!)
-                    }
-                    messageAdapter.notifyDataSetChanged()
-                    binding.chatRecyclerView.scrollToPosition(messageAdapter.itemCount - 1)
-                    //messageList
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    TODO("Not yet implemented")
-                }
-            })
-
-
-    }
-
-
-
-    fun sendNotification(receiverToken: String, title: String, body: String) {
-        val notification = FCMNotification(
-            to = receiverToken,
-            notification = NotificationData(
-                title = title,
-                body = body
-            )
+        viewModel.enterRoom(
+            feedId = feedId,
+            roomId = roomId,
+            chatRoomName = chatRoomName,
+            displayTitle = title,
         )
 
-        RetrofitInstance.api.sendNotification(notification).enqueue(object : retrofit2.Callback<FCMResponse> {
-            override fun onResponse(call: Call<FCMResponse>, response: retrofit2.Response<FCMResponse>) {
-                if (response.isSuccessful) {
-                    Log.d("FCM", "Notification sent successfully")
-                } else {
-                    Log.e("FCM", "Failed to send notification: ${response.errorBody()?.string()}")
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    when (state) {
+                        is ChatRoomViewModel.ChatRoomUiState.Loading -> {
+                            binding.chatTitle.text = title
+                        }
+                        is ChatRoomViewModel.ChatRoomUiState.Ready -> {
+                            binding.chatTitle.text = state.title
+                            viewModel.currentUserId?.let { messageAdapter.updateCurrentUserId(it) }
+                            binding.loadingOlderProgress.isVisible = state.isLoadingOlder
+                            binding.uploadProgress.isVisible = state.isUploading
+                            binding.btnAttach.isEnabled = !state.isUploading && !state.isLeaving
+                            updateSendButtonEnabled(!state.isUploading && !state.isLeaving)
+                            binding.btnLeave.isEnabled = !state.isLeaving
+                            binding.btnLeave.text = if (state.isLeaving) "나가는 중..." else "나가기"
+                            applyMessages(state.messages, state.listUpdate)
+                            state.errorMessage?.let { msg ->
+                                Toast.makeText(this@ChatActivity, msg, Toast.LENGTH_SHORT).show()
+                            }
+                            viewModel.clearListUpdate()
+                        }
+                        is ChatRoomViewModel.ChatRoomUiState.AccessDenied -> {
+                            Toast.makeText(this@ChatActivity, state.message, Toast.LENGTH_LONG).show()
+                            finish()
+                        }
+                        is ChatRoomViewModel.ChatRoomUiState.Error -> {
+                            Toast.makeText(this@ChatActivity, state.message, Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                    }
                 }
             }
+        }
+    }
 
-            override fun onFailure(call: Call<FCMResponse>, t: Throwable) {
-                Log.e("FCM", "Error sending notification", t)
+    private var sendActionsEnabled = true
+
+    private fun setupSendButton() {
+        binding.messageEdit.doAfterTextChanged {
+            updateSendButtonEnabled(sendActionsEnabled)
+        }
+
+        binding.sendBtn.setOnTouchListener { view, event ->
+            if (!view.isEnabled) return@setOnTouchListener false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    view.animate().scaleX(0.9f).scaleY(0.9f).setDuration(80).start()
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    view.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                }
+            }
+            false
+        }
+
+        binding.sendBtn.setOnClickListener {
+            val text = binding.messageEdit.text?.toString()?.trim().orEmpty()
+            if (text.isEmpty()) return@setOnClickListener
+            binding.sendBtn.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            viewModel.sendMessage(text)
+            binding.messageEdit.setText("")
+        }
+    }
+
+    private fun updateSendButtonEnabled(actionsEnabled: Boolean) {
+        sendActionsEnabled = actionsEnabled
+        val hasText = binding.messageEdit.text?.toString()?.trim()?.isNotEmpty() == true
+        val enabled = actionsEnabled && hasText
+        binding.sendBtn.isEnabled = enabled
+        binding.sendBtn.alpha = if (enabled) 1f else 0.42f
+    }
+
+    private fun setupScrollListener() {
+        binding.chatRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (dy >= 0 || isLoadingOlderScroll) return
+                val firstVisible = layoutManager.findFirstVisibleItemPosition()
+                if (firstVisible <= LOAD_MORE_THRESHOLD) {
+                    viewModel.loadOlderMessages()
+                }
             }
         })
     }
 
-}
+    private fun applyMessages(messages: List<Message>, update: ChatRoomViewModel.ChatListUpdate) {
+        when (update) {
+            is ChatRoomViewModel.ChatListUpdate.Prepend -> {
+                if (update.count <= 0) return
+                isLoadingOlderScroll = true
+                val firstVisible = layoutManager.findFirstVisibleItemPosition().coerceAtLeast(0)
+                val topView = layoutManager.findViewByPosition(firstVisible)
+                val offset = topView?.top ?: 0
+                val oldItemCount = messageAdapter.itemCount
 
+                val newIds = messages.map { it.logId }
+                if (messageList.map { it.logId } != newIds) {
+                    messageList.clear()
+                    messageList.addAll(messages)
+                    messageAdapter.refresh()
+                    val addedRows = (messageAdapter.itemCount - oldItemCount).coerceAtLeast(0)
+                    layoutManager.scrollToPositionWithOffset(firstVisible + addedRows, offset)
+                }
+                isLoadingOlderScroll = false
+            }
+            ChatRoomViewModel.ChatListUpdate.Append -> {
+                messageList.clear()
+                messageList.addAll(messages)
+                messageAdapter.refresh()
+                scrollToBottom()
+            }
+            ChatRoomViewModel.ChatListUpdate.Initial -> {
+                messageList.clear()
+                messageList.addAll(messages)
+                messageAdapter.refresh()
+                scrollToBottom()
+            }
+            ChatRoomViewModel.ChatListUpdate.None -> {
+                val newIds = messages.map { it.logId }
+                if (messageList.map { it.logId } != newIds) {
+                    messageList.clear()
+                    messageList.addAll(messages)
+                    messageAdapter.refresh()
+                }
+            }
+        }
+    }
+
+    private fun scrollToBottom() {
+        if (messageAdapter.itemCount <= 0) return
+        binding.chatRecyclerView.post {
+            binding.chatRecyclerView.scrollToPosition(messageAdapter.itemCount - 1)
+        }
+    }
+
+    private fun confirmLeaveRoom() {
+        AlertDialog.Builder(this)
+            .setTitle("채팅방 나가기")
+            .setMessage("채팅방을 나가시겠습니까?\n다시 참여하려면 게시글에서 채팅을 시작해야 합니다.")
+            .setNegativeButton("취소", null)
+            .setPositiveButton("나가기") { _, _ ->
+                viewModel.leaveChatRoomExplicit { result ->
+                    result.onSuccess {
+                        Toast.makeText(this, "채팅방을 나갔습니다.", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }.onFailure { e ->
+                        Toast.makeText(
+                            this,
+                            e.message ?: "채팅방 나가기에 실패했습니다.",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                }
+            }
+            .show()
+    }
+
+    companion object {
+        const val EXTRA_FEED_ID = "feedId"
+        const val EXTRA_ROOM_ID = "roomId"
+        const val EXTRA_CHAT_ROOM_NAME = "chatRoomName"
+        const val EXTRA_TITLE = "title"
+        const val EXTRA_HOST_ID = "hostId"
+
+        private const val LOAD_MORE_THRESHOLD = 2
+        private const val MAX_ATTACH_FILES = 10
+    }
+}

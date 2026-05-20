@@ -4,76 +4,46 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/surface"
     tools:context=".MainActivity">
 
-    <!-- 바텀네비선언 -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/blue"
-        app:itemIconTint="#000000"
-        app:itemTextColor="#000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_menu"
-        app:labelVisibilityMode="auto"
-        tools:layout_editor_absoluteX="1dp" />
-
-    <!-- 플래그들을 담을 장소 -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavi"
+        app:layout_constraintBottom_toTopOf="@+id/navDivider"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-        <!-- app:layout_constraintBottom_toTopOf - 바텀네비의 위쪽에 프레임레이아웃이 위치 하도록 제약을 설정-->
-        <!--app:layout_constraintEnd_toEndOf="parent" - 프레임레이아웃의 오른쪽을 부모에 맞춤 -->
-        <!--  app:layout_constraintStart_toStartOf="parent"  - 프레임레이아웃의 왼쪽끝을 부모왼쪽에 맞춤 -->
-        <!-- app:layout_constraintTop_toTopOf="parent" - 프레임레이아웃의 위쪽끝을 부모위에 맞춤 -->
-    </FrameLayout>
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/navDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavi" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="64dp"
+        android:background="@color/bottom_nav_bg"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:elevation="0dp"
+        app:itemIconSize="24dp"
+        app:itemIconTint="@color/bottom_nav_selector"
+        app:itemTextColor="@color/bottom_nav_selector"
+        app:itemTextAppearanceActive="@style/TextAppearance.PetManager.BottomNav.Active"
+        app:itemTextAppearanceInactive="@style/TextAppearance.PetManager.BottomNav.Inactive"
+        app:itemRippleColor="@color/bottom_nav_item_ripple"
+        app:itemActiveIndicatorStyle="@style/BottomNavIndicator"
+        app:itemShapeAppearanceOverlay="@style/ShapeAppearance.PetManager.BottomNavIndicator"
+        app:itemPaddingTop="4dp"
+        app:itemPaddingBottom="4dp"
+        app:menu="@menu/bottom_menu"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-    <!--
-    <?xml version="1.0" encoding="utf-8"?>
-    <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".MainActivity">
-
-        <TextView
-            android:id="@+id/name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Loading.."
-            android:textSize="30dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.212" />
-
-        <Button
-            android:id="@+id/logout_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="132dp"
-            android:text="logout"
-            android:background="@color/red"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/name" />
-
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-    -->

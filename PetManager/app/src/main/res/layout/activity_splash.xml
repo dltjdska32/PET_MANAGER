@@ -1,29 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/relative_layout"
-    android:background="@drawable/splash_bg_gradient"
-    >
+    android:background="@drawable/splash_bg_gradient">
 
+    <!-- 로고 아이콘 -->
     <ImageView
         android:id="@+id/image_view"
-        android:layout_width="170dp"
-        android:layout_height="170dp"
-        android:src="@drawable/free_icon_dog_2437632"
-        android:layout_centerInParent="true">
-    </ImageView>
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:src="@drawable/uzzuzzu_logo"
+        android:padding="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.38" />
 
+    <!-- 앱 이름 -->
     <TextView
         android:id="@+id/text_view"
-        android:layout_below="@id/image_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:text="PET MANAGER"
+        android:text="우쭈쭈"
         android:textStyle="bold"
-        android:textSize="30dp"
-        android:layout_marginTop="15dp">
-    </TextView>
-</RelativeLayout>
+        android:textSize="36sp"
+        android:textColor="@color/white"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/image_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 서브 타이틀 -->
+    <TextView
+        android:id="@+id/subtitle_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="반려동물을 위한 스마트 케어 서비스"
+        android:textSize="14sp"
+        android:textColor="#B0FFFFFF"
+        android:fontFamily="sans-serif"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/text_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 하단 로딩 인디케이터 영역 -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:indeterminateTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="80dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

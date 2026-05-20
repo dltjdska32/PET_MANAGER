@@ -1,37 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/bottom_nav_write"
+        android:id="@+id/bottom_nav_home"
         android:enabled="true"
-        android:icon="@drawable/write"
-        android:title="글 작성"/>
-
+        android:icon="@drawable/home"
+        android:title="홈" />
 
     <item
         android:id="@+id/bottom_nav_favorite"
         android:enabled="true"
         android:icon="@drawable/favorite"
-        android:title="좋아요"/>
+        android:title="좋아요" />
 
     <item
-        android:id="@+id/bottom_nav_home"
+        android:id="@+id/bottom_nav_write"
         android:enabled="true"
-        android:icon="@drawable/home"
-        android:title="홈"/>
-
-
+        android:icon="@drawable/write"
+        android:title="글작성" />
 
     <item
         android:id="@+id/bottom_nav_chat"
         android:enabled="true"
         android:icon="@drawable/chat"
-        android:title="채팅"/>
-
+        android:title="채팅" />
 
     <item
         android:id="@+id/bottom_nav_my_info"
         android:enabled="true"
         android:icon="@drawable/manage_accounts"
-        android:title="내 정보"/>
-
+        android:title="내정보" />
 </menu>

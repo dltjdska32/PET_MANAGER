@@ -1,16 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/chat_message_horizontal_padding"
+    android:paddingVertical="@dimen/chat_message_vertical_padding">
 
     <TextView
-        android:id="@+id/receive_message_text"
+        android:id="@+id/sender_name_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_margin="5dp"
-        android:padding="10dp"
-        android:background="@drawable/chatbackground"
-        android:text="받는 메시지"
-        android:textSize="18sp"/>
-</RelativeLayout>
+        android:includeFontPadding="false"
+        android:paddingBottom="4dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="멍멍이집사"
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:id="@+id/message_content_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="start"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sender_name_text">
+
+        <ImageView
+            android:id="@+id/message_image"
+            android:layout_width="@dimen/chat_image_size"
+            android:layout_height="@dimen/chat_image_size"
+            android:adjustViewBounds="true"
+            android:contentDescription="받은 이미지"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/receive_message_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_chat_bubble_other"
+            android:includeFontPadding="false"
+            android:lineSpacingMultiplier="1.4"
+            android:maxWidth="@dimen/chat_bubble_max_width"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            tools:text="받은 메시지" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/receive_time_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:includeFontPadding="false"
+        android:textColor="@color/text_hint"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="@id/message_content_row"
+        app:layout_constraintStart_toEndOf="@id/message_content_row"
+        tools:text="오후 3:24" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

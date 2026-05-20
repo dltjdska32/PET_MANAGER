@@ -3,9 +3,65 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
+    <!-- 프리미엄 브랜드 컬러 -->
+    <color name="primary">#2D7DD2</color>
+    <color name="primary_dark">#1A5FA0</color>
+    <color name="primary_light">#5A9FE8</color>
+    <color name="accent">#F97068</color>
+    <color name="accent_light">#FFB3AE</color>
+    <!-- 홈 썸네일 좋아요 하트 (분홍 채움) -->
+    <color name="like_heart_pink">#FF8FAB</color>
 
-    <color name="blue">#459DE4</color>
-    <color name="red">#FF0000</color>
+    <!-- 고급스러운 뉴트럴 컬러 -->
+    <color name="surface">#FAFBFC</color>
+    <color name="surface_variant">#F0F2F5</color>
+    <color name="on_surface">#1A1D21</color>
+    <color name="on_surface_variant">#6B7280</color>
 
+    <!-- 텍스트 컬러 -->
+    <color name="text_primary">#1A1D21</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="text_hint">#9CA3AF</color>
 
+    <!-- 카드/배경 컬러 -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="background_light">#F8FAFC</color>
+    <color name="divider">#E5E7EB</color>
+
+    <!-- 레거시 (하위 호환용) -->
+    <color name="blue">#2D7DD2</color>
+    <color name="red">#F97068</color>
+
+    <!-- 카카오 브랜드 컬러 -->
+    <color name="kakao_yellow">#FEE500</color>
+    <color name="kakao_text">#181600</color>
+
+    <!-- 그라데이션용 컬러 -->
+    <color name="gradient_start">#667EEA</color>
+    <color name="gradient_middle">#764BA2</color>
+    <color name="gradient_end">#F093FB</color>
+
+    <!-- 상태 컬러 -->
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    <color name="info">#3B82F6</color>
+
+    <!-- 채팅 컬러 -->
+    <color name="chat_bubble_mine">#2D7DD2</color>
+    <color name="chat_bubble_other">#F0F2F5</color>
+
+    <!-- 바텀 네비게이션 -->
+    <color name="bottom_nav_bg">#FFFFFF</color>
+    <color name="bottom_nav_active">#2D7DD2</color>
+    <color name="bottom_nav_inactive">#9CA3AF</color>
+    <!-- 활성 탭 캡슐 배경 (primary @ ~15% alpha) -->
+    <color name="bottom_nav_indicator_fill">#262D7DD2</color>
+    <!-- itemRippleColor 용(테마 프라이머리 틴트) -->
+    <color name="bottom_nav_ripple_pressed">#402D7DD2</color>
+
+    <!-- 세련된 민트/틸 그라데이션 -->
+    <color name="splash_gradient_start">#0F2027</color>
+    <color name="splash_gradient_middle">#203A43</color>
+    <color name="splash_gradient_end">#2C5364</color>
 </resources>

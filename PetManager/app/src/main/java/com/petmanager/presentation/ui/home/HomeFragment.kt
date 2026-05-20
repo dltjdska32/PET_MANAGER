@@ -1,137 +1,214 @@
 package com.petmanager.presentation.ui.home
 
-import android.content.ContentValues
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.test1.databinding.HomeFragBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
-import com.google.firebase.ktx.Firebase
+import com.petmanager.data.repository.AuthRepository
+import com.petmanager.data.repository.FeedRepository
+import com.petmanager.data.repository.RegionRepository
+import com.petmanager.databinding.HomeFragBinding
 import com.petmanager.domain.model.Profiles
-import com.petmanager.domain.model.Info
-import com.petmanager.domain.model.PostInfo
+import com.petmanager.domain.model.FeedType
 import com.petmanager.presentation.adapter.HomeAdapter
+import com.petmanager.presentation.mapper.toProfiles
 import com.petmanager.presentation.ui.main.MainActivity
-import com.example.test1.R
+import com.petmanager.R
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-typealias post_info = PostInfo
-
+@AndroidEntryPoint
 class HomeFragment : Fragment() {
 
-
     private lateinit var binding: HomeFragBinding
-    private lateinit var auth: FirebaseAuth
+    private var selectedRegionId: Long? = null
+    private var selectedFeedType: FeedType = FeedType.COMMUNICATION
+    private var currentLoadJob: Job? = null
+    /** 첫 onResume 은 onViewCreated 직후라 이미 loadFeeds 했음 — 중복 호출 생략 */
+    private var skipResumeRefresh = true
+
+    @Inject lateinit var feedRepository: FeedRepository
+    @Inject lateinit var regionRepository: RegionRepository
+    @Inject lateinit var authRepository: AuthRepository
 
     companion object {
-        const val TAG : String = "로그"
+        const val TAG: String = "로그"
 
-
-        fun newInstance() : HomeFragment {
+        fun newInstance(): HomeFragment {
             return HomeFragment()
         }
     }
 
-    // 메모리에 올라갔을때
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "HomeFragment - onCreate() called")
     }
 
-    // 부모액티비티에 붙었을 때
     override fun onAttach(context: Context) {
         super.onAttach(context)
         Log.d(TAG, "HomeFragment - onAttach() called")
     }
 
-    //뷰 생성, 프레그먼트와 레이아웃을 연결
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = HomeFragBinding.inflate(inflater, container, false)
-
-
-// RecyclerView에 대한 설정
-        var profileList = arrayListOf(
-            Profiles(R.drawable.walking, "홍대연", "두정동", "5/26~5/27 맡아주실분구해요",false,"1234", "2024년 06월 30일")
-        )
-
-        val db = Firebase.firestore
-        auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
-        var location=""
-
-        db.collection("user")
-            .whereEqualTo("userID", currentUser?.uid) //키값넣는거. where절
-            .get()
-            .addOnSuccessListener { documents ->
-                if(documents.isEmpty){
-                    val activity = activity as? MainActivity
-                    activity?.signOutAndStartSignInActivity()
-                } //if문은 임의로 넣은거
-
-                for (document in documents) {
-                    val user = document.toObject<Info>()
-                    val loc = user?.location
-                    Log.d("p", "${loc}")
-                    if(loc != null){
-                        location = loc
-                    }
-                    Log.d(ContentValues.TAG, "${document.id} => ${document.data}")
-                }
-
-                db.collection("postList")
-                    .whereEqualTo("location", location) //키값넣는거. where절
-                    .orderBy("deadline")
-                    .get()
-                    .addOnSuccessListener { documents ->
-                        if(documents.isEmpty){
-                            profileList = arrayListOf(
-                                Profiles(R.drawable.hotel, "없음", "없음", "없음",false,"1234", "없음"),
-                            )
-                        } //if문은 임의로 넣은거
-                        profileList.clear()
-                        for (document in documents) {
-                            val post = document.toObject<post_info>()
-                            val price = post?.price.toString()
-                            val title = post?.title.toString()
-                            val category = post.management_type.toString()
-                            val isFavorite =false;
-                            val postID = document.id
-                            val deadline = post?.deadline.toString()// deadline 필드 가져오기
-                            if(category == "산책"){
-                                profileList.add(Profiles(R.drawable.walking,title,category,price,isFavorite,postID, deadline))
-                            }else{
-                                profileList.add(Profiles(R.drawable.hotel,title,category,price,isFavorite,postID, deadline))
-                            }
-                            Log.d("postIDIDID", "${postID}")
-
-                            Log.d(ContentValues.TAG, "${document.id} => ${document.data}")
-                        }
-                        binding.rvProfile.layoutManager = LinearLayoutManager(requireContext())
-                        binding.rvProfile.setHasFixedSize(true)
-                        binding.rvProfile.adapter = HomeAdapter(profileList)
-
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.w(ContentValues.TAG, "Error getting documents: ", exception)
-                    }
-
-            }
-            .addOnFailureListener { exception ->
-                Log.w(ContentValues.TAG, "Error getting documents: ", exception)
-            }
-        Log.d("p", "1${location}")
-
         return binding.root
     }
-}
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding.rvProfile.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvProfile.setHasFixedSize(true)
+        binding.rvProfile.adapter = HomeAdapter(arrayListOf())
+
+        // 기본 선택: 소통
+        binding.chipComm.isChecked = true
+
+        binding.typeChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
+            selectedFeedType = when (id) {
+                R.id.chipWalk -> FeedType.PET_WALKING
+                R.id.chipCare -> FeedType.PET_SETTING
+                else -> FeedType.COMMUNICATION
+            }
+            loadFeeds()
+        }
+
+        binding.searchInputLayout.setEndIconOnClickListener {
+            loadFeeds()
+        }
+        binding.keywordEdit.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                loadFeeds()
+                true
+            } else {
+                false
+            }
+        }
+
+        binding.regionSelectBtn.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                showRegionPickerDialog()
+            }
+        }
+
+        binding.emptyCtaBtn.setOnClickListener {
+            (activity as? MainActivity)?.let { main ->
+                main.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavi)
+                    ?.selectedItemId = R.id.bottom_nav_write
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            initDefaultRegion()
+            loadFeeds()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!::binding.isInitialized) return
+        if (skipResumeRefresh) {
+            skipResumeRefresh = false
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            initDefaultRegion()
+            loadFeeds()
+        }
+    }
+
+    private fun loadFeeds() {
+        currentLoadJob?.cancel()
+        currentLoadJob = viewLifecycleOwner.lifecycleScope.launch {
+            val regionId = selectedRegionId
+                ?: authRepository.getDefaultRegionId()
+            if (regionId == null) {
+                Toast.makeText(requireContext(), "관심 지역을 먼저 설정해 주세요.", Toast.LENGTH_SHORT).show()
+                updateEmptyState(emptyList())
+                return@launch
+            }
+
+            val result = feedRepository.findFeeds(
+                regionId = regionId,
+                page = 0,
+                feedType = selectedFeedType,
+                keyword = binding.keywordEdit.text?.toString().orEmpty().trim(),
+            )
+            result.onSuccess { slice ->
+                val mapped = slice.content.map { dto ->
+                    val regionName = regionRepository.getRegionById(dto.regionId)?.regionName
+                        ?: "지역 ${dto.regionId}"
+                    dto.toProfiles(regionName)
+                }
+                val list = ArrayList(mapped)
+                binding.rvProfile.adapter = HomeAdapter(list)
+                updateEmptyState(list)
+            }.onFailure { e ->
+                Log.e(TAG, "loadFeeds", e)
+                Toast.makeText(requireContext(), e.message ?: "피드를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                updateEmptyState(emptyList())
+            }
+        }
+    }
+
+    private suspend fun initDefaultRegion() {
+        val defaultId = authRepository.getDefaultRegionId()
+        selectedRegionId = defaultId
+
+        val label = defaultId?.let { regionRepository.getRegionDisplayName(it) } ?: "내 지역 선택"
+        binding.regionSelectBtn.text = label
+    }
+
+    private suspend fun showRegionPickerDialog() {
+        if (authRepository.getCachedUserInfo() == null) {
+            Toast.makeText(requireContext(), "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val ids = authRepository.getUserRegionIds()
+        if (ids.isEmpty()) {
+            Toast.makeText(requireContext(), "관심 지역을 먼저 설정해 주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val nameById = regionRepository.getRegionDisplayNames(ids)
+        val items = ids.map { id -> id to (nameById[id] ?: "지역 $id") }
+        val names = items.map { it.second }.toTypedArray()
+        val currentIndex = items.indexOfFirst { it.first == selectedRegionId }.coerceAtLeast(0)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("내 지역 선택")
+            .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+                selectedRegionId = items[which].first
+                binding.regionSelectBtn.text = items[which].second
+                dialog.dismiss()
+                loadFeeds()
+            }
+            .setNegativeButton("취소", null)
+            .show()
+    }
+
+    private fun updateEmptyState(list: List<Profiles>) {
+        if (list.isEmpty()) {
+            binding.rvProfile.visibility = View.GONE
+            binding.emptyState.visibility = View.VISIBLE
+        } else {
+            binding.rvProfile.visibility = View.VISIBLE
+            binding.emptyState.visibility = View.GONE
+        }
+    }
+}

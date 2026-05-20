@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 다크 모드 오버라이드 (XML 레이아웃용) -->
+
+    <!-- 프리미엄 브랜드 컬러 -->
+    <color name="primary">#5A9FE8</color>
+    <color name="primary_dark">#2D7DD2</color>
+    <color name="primary_light">#87BFFF</color>
+    <color name="accent">#FFB3AE</color>
+    <color name="accent_light">#F97068</color>
+
+    <!-- 뉴트럴 컬러 -->
+    <color name="surface">#121212</color>
+    <color name="surface_variant">#1E1E1E</color>
+    <color name="on_surface">#E0E0E0</color>
+    <color name="on_surface_variant">#9E9E9E</color>
+
+    <!-- 텍스트 컬러 -->
+    <color name="text_primary">#E0E0E0</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="text_hint">#757575</color>
+
+    <!-- 카드/배경 -->
+    <color name="card_background">#1E1E1E</color>
+    <color name="background_light">#181818</color>
+    <color name="divider">#2C2C2C</color>
+
+    <!-- 채팅 -->
+    <color name="chat_bubble_mine">#3D8EE0</color>
+    <color name="chat_bubble_other">#2A2A2A</color>
+
+    <!-- 바텀 네비게이션 -->
+    <color name="bottom_nav_bg">#1E1E1E</color>
+    <color name="bottom_nav_active">#5A9FE8</color>
+    <color name="bottom_nav_inactive">#757575</color>
+    <color name="bottom_nav_indicator_fill">#285A9FE8</color>
+    <color name="bottom_nav_ripple_pressed">#4D5A9FE8</color>
+
+    <color name="like_heart_pink">#FF9EB5</color>
+</resources>

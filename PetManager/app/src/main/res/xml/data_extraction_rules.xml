@@ -1,19 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31+ 대상 데이터 추출 규칙 (cloud-backup / device-transfer).
+    토큰/유저 프로필 prefs 와 Room DB 는 둘 다 제외한다.
+    서버 재로그인으로 전부 복원 가능하므로 기기 변경 시에도 깨끗한 상태가 안전하다.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="sharedpref" path="pet_manager_prefs.xml" />
+        <exclude domain="sharedpref" path="pet_manager_secure_prefs.xml" />
+        <exclude domain="database" path="pet_manager_database" />
+        <exclude domain="database" path="pet_manager_database-shm" />
+        <exclude domain="database" path="pet_manager_database-wal" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="sharedpref" path="pet_manager_prefs.xml" />
+        <exclude domain="sharedpref" path="pet_manager_secure_prefs.xml" />
+        <exclude domain="database" path="pet_manager_database" />
+        <exclude domain="database" path="pet_manager_database-shm" />
+        <exclude domain="database" path="pet_manager_database-wal" />
     </device-transfer>
-    -->
 </data-extraction-rules>

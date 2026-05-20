@@ -1,0 +1,114 @@
+---
+description: PetManager Android 아키텍처·스택·품질 가이드라인 (Clean Architecture, MVI, Compose, Hilt 등)
+alwaysApply: true
+---
+
+# Android Application Development Guidelines
+
+PetManager 및 관련 Android 앱 개발 시 준수할 아키텍처·스택·품질 원칙입니다.
+
+---
+
+## 1. Architecture & Design (설계)
+
+앱의 규모가 커질 것을 대비하지 않는 아키텍처는 시한폭탄과 같다.
+
+### Clean Architecture
+
+- **관심사의 분리**: `Presentation` – `Domain` – `Data` 계층을 철저히 분리한다.
+- **Domain 계층**: Android Framework에 대한 **의존성 0** (순수 Kotlin, 플랫폼 무관).
+
+### MVI (Model-View-Intent) 지향
+
+- 기존 MVVM의 상태 관리 한계를 극복하기 위해 **MVI**를 채택한다.
+- UI 상태는 **불변(Immutable)** 객체로 관리한다.
+- **단방향 데이터 흐름(UDF, Unidirectional Data Flow)** 을 강제하여 상태의 예측 가능성을 높인다.
+
+### Multi-Module
+
+- 단일 `app` 모듈은 빌드 시간 저하와 스파게티 코드의 원흉이다.
+- **`:app`**, **`:core`** (공통 로직, 네트워크), **`:feature`** (기능·화면 단위)로 모듈을 분리하고 의존성을 통제한다.
+
+---
+
+## 2. Modern Tech Stack (최신 기능 및 스택)
+
+구형 라이브러리 사용은 개발자의 태만이다.
+
+### UI
+
+- **Jetpack Compose**: XML은 레거시로 간주한다. **신규 UI는 Compose**로 작성한다.
+
+### Asynchronous & Reactive
+
+- **Coroutines & Flow**: RxJava는 제거한다. 비동기는 Coroutines, 스트림은 Flow(`StateFlow`, `SharedFlow`)로 통일한다.
+
+### Dependency Injection
+
+- **Hilt**: 수동 DI·Koin 대신 컴파일 타임 검증이 가능한 **Hilt**를 사용한다.
+
+### Network & Local Data
+
+- **Retrofit2 + OkHttp3, Room**.
+- **OkHttp Interceptor**에서 통신 로깅·토큰 갱신 등을 중앙화한다.
+
+---
+
+## 3. Performance & Stability (성능 및 안정성)
+
+성능을 고려하지 않은 코드는 사용자를 쫓아낸다.
+
+### Compose Recomposition
+
+- 불필요한 리컴포지션을 줄인다.
+- 상태는 **하위 컴포저블로 호이스팅(Hoisting)** 한다.
+- 불변성이 보장되지 않는 객체는 **`@Stable`** 또는 **`@Immutable`** 로 통제한다.
+
+### 메모리 누수 방지
+
+- `Context`나 `View` 참조를 **ViewModel·싱글톤에 장기 보관하지 않는다**.
+- 생명주기를 벗어나는 코루틴은 **`viewModelScope`**, **`lifecycleScope`** 로 제한한다.
+
+### 빌드·용량 최적화
+
+- **R8 (ProGuard)**: 난독화·Dead code 제거로 APK/AAB 용량을 최소화한다.
+- **Baseline Profile**: Cold Start 개선에 활용한다.
+
+---
+
+## 4. Methodology & Convention (개발 방법론 및 규약)
+
+코드 컨벤션은 선택이 아니라 **의무**다.
+
+- 팀·프로젝트 단위 네이밍, 패키지 구조, PR 규칙, 린트/포맷터(Ktlint 등)를 문서화하고 PR에서 준수한다.
+- 신규 기능은 본 가이드의 **아키텍처·스택** 방향과 충돌하지 않게 설계한다.
+
+---
+
+
+## 5. Security & Data Protection (보안 및 데이터 보호)
+보안 사고는 서비스의 신뢰를 한순간에 무너뜨린다.
+
+데이터 암호화 및 보관
+EncryptedSharedPreferences: API Key, 사용자 토큰 등 민감한 정보는 일반 SharedPreferences가 아닌 Jetpack Security 라이브러리를 사용하여 암호화 저장한다.
+
+Biometric Prompt: 생체 인증 도입 시 Android 공식 Biometric 라이브러리를 사용하며, 로직 처리는 안전한 서버 검증을 원칙으로 한다.
+
+네트워크 보안
+Certificate Pinning: Man-in-the-Middle (MitM) 공격 방지를 위해 OkHttp 레벨에서 SSL Pinning 적용을 검토한다.
+
+Rooting Check: 루팅된 기기나 에뮬레이터에서의 실행을 탐지하고, 민감한 기능(결제, 개인정보 수정 등)에 대해 실행을 차단하는 로직을 포함한다.
+
+코드 및 리소스 보호
+ProGuard / R8: mapping.txt를 철저히 관리하며, keep 규칙을 최소화하여 난독화 효율을 극대화한다.
+
+Hardcoded Secrets 금지: API Key나 Secret 값은 소스 코드나 strings.xml에 하드코딩하지 않는다. local.properties나 CI/CD 환경 변수를 통해 주입하고, BuildConfig나 Secrets Gradle Plugin으로 관리한다.
+
+권한 관리 (Permissions)
+최소 권한의 원칙: 앱 기능 수행에 반드시 필요한 권한만 요청한다.
+
+런타임 권한: 위험 권한(위치, 카메라, 저장소 등)은 사용 시점에 명확한 가이드와 함께 요청하며, 거부 시의 예외 처리를 반드시 구현한다.
+
+정책 변경 시 `.cursor/rules/android-development-guidelines.mdc`를 갱신한다.
+
+

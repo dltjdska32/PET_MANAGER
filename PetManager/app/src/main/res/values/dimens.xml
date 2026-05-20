@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="write_photo_thumb">72dp</dimen>
+
+    <!-- Chat -->
+    <dimen name="chat_message_horizontal_padding">16dp</dimen>
+    <dimen name="chat_message_vertical_padding">4dp</dimen>
+    <dimen name="chat_bubble_max_width">280dp</dimen>
+    <dimen name="chat_image_size">200dp</dimen>
+    <dimen name="chat_input_min_height">48dp</dimen>
+    <dimen name="chat_send_btn_size">48dp</dimen>
+    <dimen name="chat_list_thumbnail_size">56dp</dimen>
+    <dimen name="chat_list_thumbnail_radius">12dp</dimen>
+</resources>

@@ -1,32 +1,41 @@
 package com.petmanager.presentation.ui.favorite
 
-import android.content.ContentValues
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.test1.databinding.FavoriteFragBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
-import com.google.firebase.ktx.Firebase
+import com.petmanager.data.local.TokenStorage
+import com.petmanager.data.repository.AuthRepository
+import com.petmanager.data.repository.FeedRepository
+import com.petmanager.data.repository.RegionRepository
+import com.petmanager.databinding.FavoriteFragBinding
 import com.petmanager.domain.model.Profiles
-import com.petmanager.domain.model.Info
-import com.petmanager.domain.model.PostInfo
-import com.petmanager.domain.model.FavoritePost
 import com.petmanager.presentation.adapter.ProfileAdapter
-import com.example.test1.R
+import com.petmanager.presentation.mapper.toProfiles
+import com.petmanager.presentation.ui.main.MainActivity
+import com.petmanager.R
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-typealias post_info = PostInfo
-
+@AndroidEntryPoint
 class FavoriteFragment : Fragment() {
 
     private lateinit var binding: FavoriteFragBinding
-    private lateinit var auth: FirebaseAuth
+
+    @Inject lateinit var feedRepository: FeedRepository
+    @Inject lateinit var regionRepository: RegionRepository
+    @Inject lateinit var authRepository: AuthRepository
+
+    private val profileList = arrayListOf<Profiles>()
+    private lateinit var adapter: ProfileAdapter
+    private var skipResumeRefresh = true
 
     companion object {
         const val TAG: String = "로그"
@@ -36,129 +45,99 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 메모리에 올라갔을때
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "FavoriteFragment - onCreate() called")
     }
 
-    // 부모액티비티에 붙었을 때
     override fun onAttach(context: Context) {
         super.onAttach(context)
         Log.d(TAG, "Favorite - onAttach() called")
     }
 
-    //뷰 생성, 프레그먼트와 레이아웃을 연결
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FavoriteFragBinding.inflate(inflater, container, false)
-
-
-        // RecyclerView에 대한 설정
-        var profileList = arrayListOf(
-            Profiles(R.drawable.walking, "홍대연", "두정동", "5/26~5/27 맡아주실분구해요", false, "1234", "2024년 6월 30일")
-        )
-
-        val db = Firebase.firestore
-        auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
-        var userID = ""
-
-        db.collection("user")
-            .whereEqualTo("userID", currentUser?.uid) //키값넣는거. where절
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    val user = document.toObject<Info>()
-                    val id = user?.userID
-                    Log.d("p", "${id}")
-                    if (id != null) {
-                        userID = id
-                    }
-                    Log.d(ContentValues.TAG, "${document.id} => ${document.data}")
-                }
-
-
-                db.collection("Favorite")
-                    .whereEqualTo("userID", userID)
-                    .get()
-                    .addOnSuccessListener { documents ->
-                        for (document in documents) {
-                            val post = document.toObject<FavoritePost>()
-                            val id = post?.postID
-                            if (id != null) {
-                                profileList.clear()
-                                db.collection("postList")
-                                    .document(id) //키값넣는거. where절
-                                    .get()
-                                    .addOnSuccessListener { document ->
-                                        val post = document.toObject<post_info>()
-                                        val price = post?.price.toString()
-                                        val title = post?.title.toString()
-                                        val category = post?.management_type.toString()
-                                        val isFavorite = false;
-                                        val postID = document.id
-                                        val deadline = post?.deadline.toString()
-                                        Log.d("postIDIDID", "${postID}")
-                                        if(category =="산책"){
-                                            profileList.add(
-                                                Profiles(
-                                                    R.drawable.walking,
-                                                    title,
-                                                    category,
-                                                    price,
-                                                    isFavorite,
-                                                    postID,
-                                                    deadline
-                                                )
-                                            )
-                                        }else{
-                                            profileList.add(
-                                                Profiles(
-                                                    R.drawable.hotel,
-                                                    title,
-                                                    category,
-                                                    price,
-                                                    isFavorite,
-                                                    postID,
-                                                    deadline
-                                                )
-                                            )
-                                        }
-
-                                        if(profileList != null){
-                                            binding.rvProfile.layoutManager = LinearLayoutManager(requireContext())
-                                            binding.rvProfile.setHasFixedSize(true)
-                                            binding.rvProfile.adapter = ProfileAdapter(profileList)
-                                        }
-                                        Log.d(
-                                            ContentValues.TAG,
-                                            "${document.id} => ${document.data}"
-                                        )
-                                    }
-                            }
-                        }
-
-
-
-                    }
-            }
-            .addOnFailureListener { exception ->
-                Log.w(ContentValues.TAG, "Error getting documents: ", exception)
-            }
-
-
-
-
-
-
-        return binding!!.root
+        return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
+        adapter = ProfileAdapter(profileList) { item, profilePosition ->
+            if (profilePosition == androidx.recyclerview.widget.RecyclerView.NO_POSITION) return@ProfileAdapter
+            viewLifecycleOwner.lifecycleScope.launch {
+                feedRepository.toggleLike(item.postID).onSuccess {
+                    profileList.removeAt(profilePosition)
+                    adapter.notifyItemRemoved(profilePosition)
+                    adapter.notifyItemRangeChanged(profilePosition, profileList.size - profilePosition)
+                    updateEmptyState(profileList)
+                }.onFailure { e ->
+                    Toast.makeText(requireContext(), e.message ?: "좋아요 처리 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
+        binding.rvProfile.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvProfile.setHasFixedSize(true)
+        binding.rvProfile.adapter = adapter
+
+        binding.emptyCtaBtn.setOnClickListener {
+            (activity as? MainActivity)?.let { main ->
+                main.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavi)
+                    ?.selectedItemId = R.id.bottom_nav_home
+            }
+        }
+
+        loadLikedFeeds()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!::binding.isInitialized) return
+        if (skipResumeRefresh) {
+            skipResumeRefresh = false
+            return
+        }
+        loadLikedFeeds()
+    }
+
+    private fun loadLikedFeeds() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            // 게이트웨이는 JWT 없으면 401 — 프로필 캐시만 있고 AT 가 비는 경우 방지
+            if (authRepository.getCachedUserInfo() == null || TokenStorage.accessToken().isNullOrBlank()) {
+                updateEmptyState(profileList)
+                return@launch
+            }
+            feedRepository.findMyLikedFeeds(page = 0).onSuccess { slice ->
+                profileList.clear()
+                profileList.addAll(
+                    slice.content.map { dto ->
+                        val regionName = regionRepository.getRegionById(dto.regionId)?.regionName
+                            ?: "지역 ${dto.regionId}"
+                        dto.toProfiles(regionName, likedOverride = true)
+                    }
+                )
+                adapter.notifyDataSetChanged()
+                updateEmptyState(profileList)
+            }.onFailure { e ->
+                Log.e(TAG, "loadLikedFeeds", e)
+                Toast.makeText(requireContext(), e.message ?: "목록을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                updateEmptyState(profileList)
+            }
+        }
+    }
+
+    private fun updateEmptyState(list: List<Profiles>) {
+        if (list.isEmpty()) {
+            binding.rvProfile.visibility = View.GONE
+            binding.emptyState.visibility = View.VISIBLE
+        } else {
+            binding.rvProfile.visibility = View.VISIBLE
+            binding.emptyState.visibility = View.GONE
+        }
+    }
 }
-

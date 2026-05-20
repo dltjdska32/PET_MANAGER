@@ -1,13 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older that API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API ≤30 대상 AutoBackup 규칙.
+    토큰/유저 프로필 prefs와 Room DB는 복원해도 의미 없거나 보안 리스크가 있어 제외한다.
+    (EncryptedSharedPreferences 의 MasterKey 는 AndroidKeyStore 에 묶여 기기 이전 시 복호화 불가,
+     access token 은 유효기간 내라면 평문 복원이 계정 탈취로 이어질 수 있음.)
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <exclude domain="sharedpref" path="pet_manager_prefs.xml" />
+    <exclude domain="sharedpref" path="pet_manager_secure_prefs.xml" />
+    <exclude domain="database" path="pet_manager_database" />
+    <exclude domain="database" path="pet_manager_database-shm" />
+    <exclude domain="database" path="pet_manager_database-wal" />
 </full-backup-content>
